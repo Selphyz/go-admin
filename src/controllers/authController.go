@@ -1,10 +1,12 @@
 package controllers
 
 import (
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gofiber/fiber/v2"
 	"go-admin/src/database"
 	"go-admin/src/models"
-	"golang.org/x/crypto/bcrypt"
+	"strconv"
+	"time"
 )
 
 func Register(c *fiber.Ctx) error {
@@ -16,14 +18,13 @@ func Register(c *fiber.Ctx) error {
 		c.Status(fiber.StatusBadRequest)
 		return c.JSON(fiber.Map{"message": "passwords do not match"})
 	}
-	password, _ := bcrypt.GenerateFromPassword([]byte(data["password"]), 12)
 	user := models.User{
 		FirstName:    data["first_name"],
 		LastName:     data["last_name"],
 		Email:        data["email"],
-		Password:     password,
 		IsAmbassador: false,
 	}
+	user.SetPassword(data["password"])
 	database.DB.Create(&user)
 	return c.JSON(user)
 }
@@ -38,8 +39,27 @@ func Login(c *fiber.Ctx) error {
 		c.Status(fiber.StatusBadRequest)
 		return c.JSON(fiber.Map{"message": "Invalid credentials"})
 	}
-	if err := bcrypt.CompareHashAndPassword(user.Password, []byte(data["password"])); err != nil {
+	if err := user.ComparePassword(data["password"]); err != nil {
 		return c.JSON(fiber.Map{"message": "Invalid credentials"})
 	}
-	return c.JSON(user)
+	payload := jwt.StandardClaims{
+		Subject:   strconv.Itoa(int(user.Id)),
+		ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
+	}
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, payload).SignedString([]byte("secret"))
+
+	if err != nil {
+		c.Status(fiber.StatusBadRequest)
+		return c.JSON(fiber.Map{"message": "Invalid credentials"})
+	}
+	cookie := fiber.Cookie{
+		Name:     "jwt",
+		Value:    token,
+		Expires:  time.Now().Add(time.Hour * 24),
+		HTTPOnly: true,
+	}
+	c.Cookie(&cookie)
+	return c.JSON(fiber.Map{
+		"message": "success",
+	})
 }
