@@ -9,9 +9,11 @@ import (
 func Setup(app *fiber.App) {
 	api := app.Group("api")
 	admin := api.Group("admin")
-	admin.Post("/register", controllers.Register)
-	admin.Post("/login", controllers.Login)
+	admin.Post("register", controllers.Register)
+	admin.Post("login", controllers.Login)
 	adminAuthenticated := admin.Use(middleware.IsAuthenticated)
-	adminAuthenticated.Get("/user", controllers.User)
-	adminAuthenticated.Post("/logout", controllers.Logout)
+	adminAuthenticated.Get("user", controllers.User)
+	adminAuthenticated.Post("logout", controllers.Logout)
+	adminAuthenticated.Put("users/info", controllers.UpdateInfo)
+	adminAuthenticated.Put("users/password", controllers.UpdatePassword)
 }
