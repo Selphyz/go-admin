@@ -9,14 +9,20 @@ services:
     depends_on:
       - db
   db:
-    image: mysql:5.7.22
+    image: mysql
+    command: --default-authentication-plugin=mysql_native_password
     restart: always
     environment:
-      MYSQL_DATABASE: admin
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: admin_dashboard
       MYSQL_USER: root
       MYSQL_PASSWORD: root
-      MYSQL_ROOT_PASSWORD: root
     volumes:
       - .dbdata:/var/lib/mysql
     ports:
       - "3306:3306"
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
