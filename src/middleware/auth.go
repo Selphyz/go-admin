@@ -26,7 +26,7 @@ func GetUserID(c *fiber.Ctx) (uint, error) {
 	if err != nil {
 		return 0, err
 	}
-	payload := token.Claims.(jwt.StandardClaims)
+	payload := token.Claims.(*jwt.StandardClaims)
 	id, _ := strconv.Atoi(payload.Subject)
 	return uint(id), nil
 }
