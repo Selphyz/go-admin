@@ -1,12 +1,11 @@
 package controllers
 
 import (
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gofiber/fiber/v2"
 	"go-admin/src/database"
 	"go-admin/src/middleware"
 	"go-admin/src/models"
-	"strconv"
+	"strings"
 	"time"
 )
 
@@ -23,7 +22,7 @@ func Register(c *fiber.Ctx) error {
 		FirstName:    data["first_name"],
 		LastName:     data["last_name"],
 		Email:        data["email"],
-		IsAmbassador: false,
+		IsAmbassador: strings.Contains(c.Path(), "/api/ambassador"),
 	}
 	user.SetPassword(data["password"])
 	database.DB.Create(&user)
@@ -43,12 +42,20 @@ func Login(c *fiber.Ctx) error {
 	if err := user.ComparePassword(data["password"]); err != nil {
 		return c.JSON(fiber.Map{"message": "Invalid credentials"})
 	}
-	payload := jwt.StandardClaims{
-		Subject:   strconv.Itoa(int(user.Id)),
-		ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
+	isAmbassador := strings.Contains(c.Path(), "/api/ambassador")
+	var scope string
+	if isAmbassador {
+		scope = "ambassador"
+	} else {
+		scope = "admin"
 	}
-	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, payload).SignedString([]byte("secret"))
-
+	if !isAmbassador && user.IsAmbassador {
+		c.Status(fiber.StatusBadRequest)
+		return c.JSON(fiber.Map{
+			"message": "unauthorized",
+		})
+	}
+	token, err := middleware.GenerateJWT(user.Id, scope)
 	if err != nil {
 		c.Status(fiber.StatusBadRequest)
 		return c.JSON(fiber.Map{"message": "Invalid credentials"})
