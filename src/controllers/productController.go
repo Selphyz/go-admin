@@ -85,29 +85,29 @@ func ProductsBackend(c *fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
-		var searchedProducts []models.Product
-		if s := c.Query("s"); s != "" {
-			lower := strings.ToLower(s)
-			for _, product := range products {
-				if strings.Contains(strings.ToLower(product.Title), lower) || strings.Contains(strings.ToLower(product.Description), lower) {
-					searchedProducts = append(searchedProducts, product)
-				}
+	}
+	var searchedProducts []models.Product
+	if s := c.Query("s"); s != "" {
+		lower := strings.ToLower(s)
+		for _, product := range products {
+			if strings.Contains(strings.ToLower(product.Title), lower) || strings.Contains(strings.ToLower(product.Description), lower) {
+				searchedProducts = append(searchedProducts, product)
 			}
-		} else {
-			searchedProducts = products
 		}
-		if sortParam := c.Query("sort"); sortParam != "" {
-			sortLower := strings.ToLower(sortParam)
-			if sortLower == "asd" {
-				sort.Slice(searchedProducts, func(i, j int) bool {
-					return searchedProducts[i].Price < searchedProducts[j].Price
-				})
-			} else if sortLower == "desc" {
-				sort.Slice(searchedProducts, func(i, j int) bool {
-					return searchedProducts[i].Price > searchedProducts[j].Price
-				})
-			}
+	} else {
+		searchedProducts = products
+	}
+	if sortParam := c.Query("sort"); sortParam != "" {
+		sortLower := strings.ToLower(sortParam)
+		if sortLower == "asd" {
+			sort.Slice(searchedProducts, func(i, j int) bool {
+				return searchedProducts[i].Price < searchedProducts[j].Price
+			})
+		} else if sortLower == "desc" {
+			sort.Slice(searchedProducts, func(i, j int) bool {
+				return searchedProducts[i].Price > searchedProducts[j].Price
+			})
 		}
 	}
-	return c.JSON(products)
+	return c.JSON(searchedProducts)
 }
